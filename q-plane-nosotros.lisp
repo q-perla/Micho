@@ -104,6 +104,7 @@
     (q-step-4-5 (q-step-4-4 (q-step-4-3 (q-step-4-2 (q-step-4-1 L)))))
 ) 
 
+;Función que simplifica monomios
 (defun q-step (L)
     (if (equal (copy-list L) (q-step-casi L))
         L
@@ -111,20 +112,56 @@
     )
 )                 
 
+;Función que simplifica polinomios
 (defun q-step-multi (W) (mapcan #'q-step W))
 
-(defun q-suma-casi (m1 m2)
+;Función que suma polinomios de z
+;(q-suma-z '((1 2) (1 2) (2 4)))
+;(q-suma-z '((1 2) (1 2) (2 2) (1 3)))
+(defun q-suma-z (coef)
+    (let ((i 1) (n (length coef)) (bandera NIL))
+        (if (> n 1)
+            (loop while (< i n)
+                ;Checamos si las potencias son iguales
+                do (if (equal (second (nth i coef)) (second (first coef)))
+                    (progn 
+                        (setf (first (nth i coef)) (+ (first (nth i coef)) (first (first coef))))
+                        (pop coef)
+                        (setf coef (q-suma-z coef))
+                    )
+                    (setf bandera T)
+                )
+                (if bandera 
+                    (setf coef (append (list (first coef)) (q-suma-z (cdr coef))))
+                    (setf coef (q-suma-z coef))
+                )
+                (incf i)
+            )
+            coef
+        )
+    )
+    coef
+)
+
+
+;Función que suma monomios pero sin reducir los polinomios de Z
+(defun q-suma-monomios (m1 m2)
+;(q-suma-monomios '(((1 3) (1 2)) (1 -2)) '(((4 2) (-1 3)) (1 -2)))
+
     (let ((coef NIL) (polinomio NIL))
         (if (equal (second m1) (second m2))
             (progn 
                 (setf coef (append (coeficiente m1) (coeficiente m2)))
-                (setf polinomio (list coef (second m1)))
+                (setf polinomio (list (q-suma-z coef) (second m1)))
             )
             (setf polinomio (list m1 m2))
         )
         polinomio
     )
 )
+
+
+
 
 ;Función que multiplica dos monomios
 (defun prodmonz (L1 L2)
@@ -157,7 +194,6 @@
     )
 )
 
-
 (defun producto2 (m1 m2)
     (let ((producto (list "perla" "perla")))
         (setf (first producto) (z-prod (first m1) (first m2)))
@@ -167,58 +203,5 @@
 )
 
 
-(defun q-connect (x y) (if (and (null x) (atom y))
-                                         (cons nil y)
-                                         (append x y)))
 
 
-
-#| 
-La "longitud" que toma en cuenta el numero de los -unos en la lista. Los 
-terminos se van a ordenar primero por la longitud estandard y luego por la 
-potencia de la variable compleja no-conmutativo z. Por ejemplo: 
-    (sort W (lambda (x y) (>= (q-length x) (q-length y))))
-|#
-
-(defun q-length (L) 
-    (if (atom L) 0 
-	(let* ((B (butlast L 0)) (u (length B)) (v (reduce #'+ B))) 
-	     (+ u (/ (- u v) (* 2 (1+ u)))))))
-
-;;;; Compactificacion & Expansion de Monomios No-conmutativos. 
-
-(defun q-simplify (L)
-        (cond ((null (cdr L)) L)
-              ((= (car L) 0) (q-simplify (cdr L)))
-              ((> (car L) 0 (cadr L)) (cons (car L) (q-simplify (cdr L))))
-              ((< (car L) 0 (cadr L)) (cons (car L) (q-simplify (cdr L))))
-              (T (q-simplify (cons (+ (car L) (cadr L)) (cddr L)))))) ;; aquí va
-
-(defun q-expand (L) 
-	(labels ((qe (n) 
-		 	(if (>= n 0) (make-list n :initial-element 1) 
-                 		(make-list (- n) :initial-element -1))))
-
-	(mapcan #'qe L))) 
-
-;;;; Indice de dado objeto en una lista. Si es cero, el objeto no aparece. 
-
-(defun index (x L &key (test #'equal) (indf (constantly 1))) 
-	(reduce #'+ (mapcar (lambda (y) (if (funcall test x y) 
-					    (funcall indf y) 0)) L)))
-
-;;;; Usamos funcion :test para determinar "igualdad" de objetos. A tales
-;;;; objetos se aplica la funcion :op.   
-
-
-;;;; Colectar objetos de una lista, con sus respetivos indices en conses. 
-
-(defun compress (L &key (test #'equal) (indf (constantly 1)) (op #'identity)) 
-    (if (null L) L 
-       (let* ((x (car L)) (K (remove x (cdr L) :test test))) 
- 	 (cons (append (funcall op x) 
-		       (index x L :test test :indf indf)) 
- 	       (compress K :op op :test test :indf indf)))))
-
-(defun q-compress (W) 
-  (compress W :test (lambda (x y) (equal (pp x) (pp y))) :op #'pp :indf #'qq))
