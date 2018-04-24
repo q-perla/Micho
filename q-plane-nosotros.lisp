@@ -1,12 +1,3 @@
-#| 
-Proyeccion a punto fijo, suponiendo que repetidas iteraciones nos llevaran 
-siempre a un tal punto! Esto involucra en forma primaria la idea de Infinidad.  
-|# 
-
-(defvar i #c(0 1))
-(defvar -i #c(0 -1))
-
-
 (defun fixed-point (fn x &key (test #'equal)) 
 	(do ((i x (funcall fn i))) 
 		((funcall test i (funcall fn i)) i)))
@@ -15,77 +6,75 @@ siempre a un tal punto! Esto involucra en forma primaria la idea de Infinidad.
     (first monomio)
 )
 
-(defun potencia (monomio)
+(defun generadores (monomio)
     (second monomio)
 )
 
-(defun generadores (monomio)
-    (third monomio)
+;'( ((2 3) (4 -1)) (1 -1 -2 1 2 -2) )
+
+;;(defun pp (L) (if (atom L) nil (butlast L 0)))
+;;(defun qq (L) (if (atom L) L (last L 0)))
+
+(defun cambiazetapositivo (L)
+    (setf (second L) (+ (second L) 1))
+    L
 )
 
-;;; La funcion basica para el calculo en el Q-plano. Nuestros objetos son 
-;;; listas de numeros 1 y -1, representando monomios de variable compleja 
-;;; no-conmutativa (z <=> 1 & z* <=> -1). Lista vacia incluida <=> Uno.  
+(defun cambiazetanegativo (L)
+    (setf (second L) (- (second L) 1))
+    L
+)
 
-;;; Presentamos 3 soluciones ilustrando diferentes transformaciones de LISP. 
-;;; Ehjemplo de polinomio '((1 -1 -1 1 -1 1 -1 . 2))
+
+(defun cambiazetas+ (L)
+    (mapcar #'cambiazetapositivo L)
+)
+
+(defun cambiazetas- (L)
+    (mapcar #'cambiazetanegativo L)
+)
+
 (defun q-step-4-1 (L) 
-        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(i 1) L0)))
+        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(2 1) L0)))
 	    (if (null j) L
                 (progn 
-                    (setf (third L) (replace (copy-list L0) '(1 i) :start1 j))
-                    (setf (second L) (+ z 1))
+                    (setf (second L) (replace (copy-list L0) '(1 2) :start1 j))
+                    (setf (first L) (cambiazetas+ (first L)))
                     L
                 )
         )))
 
 (defun q-step-4-2 (L) 
-        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(-i -1) L0)))
+        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(-2 -1) L0)))
 	    (if (null j) L
                 (progn 
-                    (setf (third L) (replace (copy-list L0) '(-1 -i) :start1 j))
-                    (setf (second L) (+ z 1))
+                    (setf (second L) (replace (copy-list L0) '(-1 -2) :start1 j))
+                    (setf (first L) (cambiazetas+ (first L)))
                     L
                 )
         )))
 
 (defun q-step-4-3 (L) 
-        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(i -1) L0)))
+        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(2 -1) L0)))
 	    (if (null j) L
                 (progn 
-                    (setf (third L) (replace (copy-list L0) '(-1 i) :start1 j))
-                    (setf (second L) (- z 1))
+                    (setf (second L) (replace (copy-list L0) '(-1 2) :start1 j))
+                    (setf (first L) (cambiazetas- (first L)))
                     L
                 )
         )))
 
 (defun q-step-4-4 (L) 
-        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(-i 1) L0)))
+        (let* ((L0 (generadores L)) (z (potencia L)) (c (coeficiente L)) (j (search '(-2 1) L0)))
 	    (if (null j) L
                 (progn 
-                    (setf (third L) (replace (copy-list L0) '(1 -i) :start1 j))
-                    (setf (second L) (- z 1))
+                    (setf (second L) (replace (copy-list L0) '(1 -2) :start1 j))
+                    (setf (first L) (cambiazetas- (first L)))
                     L
                 )
         )))                
 
-(defun q-step-4-5 (L) 
-      (let ((L0 (generadores L)))
-        (setf j (search '(1 1) L0)) 
 
-	    (setf (third L) (remove-if (lambda (x) (if (= (subseq x (+ x 2)  ))
-        )
-        
-        ) '(1 -1) L0))
-        (setf (third L) (remove '(-1 1) L0))
-        (setf (third L) (remove '(i -i) L0))
-        (setf (third L) (remove '(-i i) L0))
-        L
-    ))  
-
-(defun q-step-4-5-perla (L)
-    (if (subseq L ))
-)    
 
 (defun q-step-4-5 (L)
     (let* ( (x 0) (L0 (generadores L))  (h (1- (length L0))))
@@ -94,26 +83,88 @@ siempre a un tal punto! Esto involucra en forma primaria la idea de Infinidad.
                     (or 
                         (equal (list 1 -1)  (subseq L0 x (+ x 2)))
                         (equal (list -1 1)  (subseq L0 x (+ x 2)))
-                        (equal (list i -i)  (subseq L0 x (+ x 2)))
-                        (equal (list -i i)  (subseq L0 x (+ x 2)))
+                        (equal (list 2 -2)  (subseq L0 x (+ x 2)))
+                        (equal (list -2 2)  (subseq L0 x (+ x 2)))
                     )
                     (if (null  (subseq L0 0 x))
                         (setf L0 (subseq L0 (+ x 2)))
                         (setf L0 (append (subseq L0 0 x) (subseq L0 (+ x 2))))
                     )
+                    (setf x (1+ x))
                 )
-            (print (subseq L0 x (+ x 2)))                
-            (setf x (1+ x))
+            
             (setf h (1- (length L0)))
         )
-        (setf (third L) L0)
+        (setf (second L) L0)
         L
     )
 )             
 
-(defun q-step (L)
+(defun q-step-casi (L)
     (q-step-4-5 (q-step-4-4 (q-step-4-3 (q-step-4-2 (q-step-4-1 L)))))
-)                  
+) 
+
+(defun q-step (L)
+    (if (equal (copy-list L) (q-step-casi L))
+        L
+        (q-step (q-step-casi L))
+    )
+)                 
+
+(defun q-step-multi (W) (mapcan #'q-step W))
+
+(defun q-suma-casi (m1 m2)
+    (let ((coef NIL) (polinomio NIL))
+        (if (equal (second m1) (second m2))
+            (progn 
+                (setf coef (append (coeficiente m1) (coeficiente m2)))
+                (setf polinomio (list coef (second m1)))
+            )
+            (setf polinomio (list m1 m2))
+        )
+        polinomio
+    )
+)
+
+;Función que multiplica dos monomios
+(defun prodmonz (L1 L2)
+    "
+    Función que multiplica dos monomios
+    "
+    (if (and (not (null L1)) (not (null L2)))
+        (let ((L0 (list 1 1)))
+            (setf (first L0) (* (first L1) (first L2)))
+            (setf (second L0) (+ (second L1) (second L2)))
+            L0
+        )
+    )
+)
+
+;Función que multiplica dos polinomios
+(defun z-prod (L1 L2)
+    "
+    Función que multiplica dos polinomios
+    "
+    (let (producto)
+        (dolist (m1 L1 producto)
+            (dolist (m2 L2)
+                (push 
+                    (prodmonz m1 m2)
+                    producto
+                )
+            )
+        )
+    )
+)
+
+
+(defun producto2 (m1 m2)
+    (let ((producto (list "perla" "perla")))
+        (setf (first producto) (z-prod (first m1) (first m2)))
+        (setf (second producto) (append (second m1) (second m2)))
+        producto
+    )
+)
 
 
 (defun q-connect (x y) (if (and (null x) (atom y))
@@ -121,16 +172,6 @@ siempre a un tal punto! Esto involucra en forma primaria la idea de Infinidad.
                                          (append x y)))
 
 
-;;; La version que actua sobre listas (<=> "combinaciones" de monomios): 
-
-(defun q-step-multi (W) (mapcan #'q-step-3 W))
-
-;;; Polinomios con coeficientes arbitrarios (complejos), los vamos a
-;;; interpretar como listas de conses (L . z) donde L es el monomio-lista 
-;;; de uno & -1, con z coeficiente complejo.  
-
-
-;;; Funciones Auxiliarias
 
 #| 
 La "longitud" que toma en cuenta el numero de los -unos en la lista. Los 
