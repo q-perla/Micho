@@ -203,5 +203,96 @@
 )
 
 
+;;;; Version con vectores
+
+;;; La funcion basica para el calculo en el Q-Toro. Nuestros objetos son 
+;;; listas de numeros complejos que representan monomios de variable compleja 
+;;; no-conmutativa (u <=> 1, u* <=> -1, v <=> 2 & v* <=> -2).   Los coeficientes
+;;; de un monomio son polinomios de 'z' y '\bar{z}'. Por ejemplo al monomio 
+;;;  (1 + 2z4 +3 \bar{z}5)vu <===> ((2 1) . #((1 . 0) (2 . 4) (1 . -5)))
+
+ ;;;; Observese que los polinomios de $z$ los indicamos con vectores cuyos elementos son listas punteadas 
+ ;;;; donde el primer elemento es el coeficiente de z y el segundo es la potencia de z.
+
+;;Función que aumenta por uno a los elementos de un vector cuyos elementos son listas de conses: #((a . b) (c . d))
+;;lo transforma en el vector #((a . b+1) (c . (d+1))).
+
+(defun z+ (v) (dotimes (i  (length v) v0) 
+  (setf (cdr (elt v i)) (+ (cdr (elt v i)) 1)) 
+  (setf v0  v  ))
+)
+
+;; Función que disminuye por uno a los elementos de un vector cuyos elementos son listas de conses.
+
+(defun z- (v) (dotimes (i  (length v) v0) 
+  (setf (cdr (elt v i)) (- (cdr (elt v i)) 1)) 
+  (setf v0  v  ))
+)
+
+
+;;;   La siguiente función hace las relaciones de conmutatividad básicas entre monomios de u y de v.
+
+(defun pp (L) (if (atom L) nil (butlast L 0)))
+(defun qq (L) (if (atom L) L (last L 0)))
+
+(defun q-step-1 (L) 
+      (let* ((L0 (pp L)) (v (z+ (qq L))) (j (search '(2 1) L0)))
+	   (if (null j) L  
+            (append (replace (copy-list L0) '(1 2) :start1 j) v)
+            )
+        )))
+
+
+(defun q-step-2 (L) 
+      (let* ((L0 (pp L)) (v (z+ (qq L))) (j (search '(-2 -1) L0)))
+	   (if (null j) L  
+            (append (replace (copy-list L0) '(-1 -2) :start1 j) v)
+            )
+        )))
+
+(defun q-step-3 (L) 
+      (let* ((L0 (pp L)) (v (z- (qq L))) (j (search '(2 -1) L0)))
+	   (if (null j) L  
+            (append (replace (copy-list L0) '(-1 2) :start1 j) v)
+            )
+        )))
+
+(defun q-step-4 (L) 
+      (let* ((L0 (pp L)) (v (z- (qq L))) (j (search '(-2 1) L0)))
+	   (if (null j) L  
+            (append (replace (copy-list L0) '(1 -2) :start1 j) v)
+            )
+        )))
+
+(defun bay-unit-1 (L) (let* ((L0 (pp L)) (v  (qq L)) (j (search '(-1 1) L0)))
+	   (if (null j) L  
+            (append  (remove 0 L0 :start j :end (+ j 2) 
+                                                  :test (constantly T)) v)
+            )
+        ))
+
+(defun bay-unit-2 (L) (let* ((L0 (pp L)) (v  (qq L)) (j (search '(1 -1) L0)))
+	   (if (null j) L  
+            (append  (remove 0 L0 :start j :end (+ j 2) 
+                                                  :test (constantly T)) v)
+            )
+        ))
+
+(defun bay-unit-3 (L) (let* ((L0 (pp L)) (v  (qq L)) (j (search '(2 -2) L0)))
+	   (if (null j) L  
+            (append  (remove 0 L0 :start j :end (+ j 2) 
+                                                  :test (constantly T)) v)
+            )
+        ))
+
+(defun bay-unit-4 (L) (let* ((L0 (pp L)) (v  (qq L)) (j (search '(-2 2) L0)))
+	   (if (null j) L  
+            (append  (remove 0 L0 :start j :end (+ j 2) 
+                                                  :test (constantly T)) v)
+            )
+        ))
+
+                
+(defun q-step (L) (q-step-1 (q-step-2 (q-step-3 (q-step-4 (bay-unit-4 (bay-unit-3 (bay-unit-2 (bay-unit-1 L)))))))) ) 
 
 
